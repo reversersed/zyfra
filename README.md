@@ -23,3 +23,10 @@ When starting up, use flag `-file` to specify **absolute** path to a file<br>
 If `-file` flag is not provided, the application will use default user `admin admin` which can be changed using flags `-username` and `-password`<br>
 You can see flags and description using `go run cmd/sso/main.go -help` or `./main.exe -help`<br>
 There already is `users.json` file in this repo which you can use or edit
+
+## Tests
+
+Application has 50% unit tests coverage<br>
+You can find coverage info in [tests](/tests) folder or use `make test` to run tests by yourself<br>
+
+> total:								(statements)	50.0%
