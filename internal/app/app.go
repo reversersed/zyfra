@@ -2,7 +2,7 @@ package app
 
 import (
 	"flag"
-	"fmt"
+	"io"
 	"log"
 	"os"
 
@@ -30,7 +30,7 @@ const (
 )
 
 type readerService interface {
-	WaitKey() string
+	WaitKey(io.Reader) string
 }
 type parserService interface {
 	ParseCommand(string) (string, []string, error)
@@ -59,7 +59,7 @@ func New() *app {
 	if err != nil && len(*fileConfig) > 0 {
 		log.Fatalf("couldn't open and read file: %s (%v)", *fileConfig, err)
 	} else if err != nil {
-		fmt.Printf("config file not found, using %s for username and %s for password...", *userName, *password)
+		log.Printf("config file not found, using %s for username and %s for password...", *userName, *password)
 		cfg = map[string]string{*userName: *password}
 	}
 
@@ -67,10 +67,10 @@ func New() *app {
 }
 func (a *app) Run() {
 	for {
-		fmt.Printf("\nCommands available:\n\t%s %s\n\t%s %s\n\t%s %s\n\t%s\n", COMMAND_LOGIN, ARGS_LOGIN, COMMAND_AUTH, ARGS_AUTH, COMMAND_DELETE, ARGS_DELETE, COMMAND_QUIT)
-		cmd, args, err := a.parser.ParseCommand(a.reader.WaitKey())
+		log.Printf("\nCommands available:\n\t%s %s\n\t%s %s\n\t%s %s\n\t%s\n", COMMAND_LOGIN, ARGS_LOGIN, COMMAND_AUTH, ARGS_AUTH, COMMAND_DELETE, ARGS_DELETE, COMMAND_QUIT)
+		cmd, args, err := a.parser.ParseCommand(a.reader.WaitKey(os.Stdin))
 		if err != nil {
-			fmt.Printf("! Parse error: %v\n", err)
+			log.Printf("\n! Parse error: %v\n\n", err)
 			continue
 		}
 
@@ -79,46 +79,46 @@ func (a *app) Run() {
 			a.Close()
 		case COMMAND_LOGIN:
 			if len(args) != 2 {
-				fmt.Printf("\n\n! Excepted 2 arguments, but got %d\n\n", len(args))
+				log.Printf("\n\n! Excepted 2 arguments, but got %d\n\n", len(args))
 				continue
 			}
 			password, ok := a.validNames[args[0]]
 			if !ok {
-				fmt.Println("\n\n! User does not exist\n ")
+				log.Println("\n\n! User does not exist\n ")
 				continue
 			}
 			if password != args[1] {
-				fmt.Println("\n\n! Incorrect password\n ")
+				log.Println("\n\n! Incorrect password\n ")
 				continue
 			}
-			fmt.Printf("\nGenerated session key: %s\nSession will be expired in 1 minute\n", a.service.CreateSession())
+			log.Printf("\nGenerated session key: %s\nSession will be expired in 1 minute\n", a.service.CreateSession())
 			continue
 		case COMMAND_AUTH:
 			if len(args) != 1 {
-				fmt.Printf("\n\n! Excepted 1 arguments, but got %d\n\n", len(args))
+				log.Printf("\n\n! Excepted 1 arguments, but got %d\n\n", len(args))
 				continue
 			}
 			if err := a.service.CheckSession(args[0]); err == nil {
-				fmt.Println("\n\nUser successfully authorized")
+				log.Println("\n\nUser successfully authorized")
 				continue
 			} else {
-				fmt.Printf("\n\n%v\n", err)
+				log.Printf("\n\n%v\n", err)
 				continue
 			}
 		case COMMAND_DELETE:
 			if len(args) != 1 {
-				fmt.Printf("\n\n! Excepted 1 arguments, but got %d\n\n", len(args))
+				log.Printf("\n\n! Excepted 1 arguments, but got %d\n\n", len(args))
 				continue
 			}
 			if err := a.service.Delete(args[0]); err == nil {
-				fmt.Println("\n\nSession deleted successfully")
+				log.Println("\n\nSession deleted successfully")
 				continue
 			} else {
-				fmt.Printf("\n\n%v\n", err)
+				log.Printf("\n\n%v\n", err)
 				continue
 			}
 		default:
-			fmt.Printf("\n\n! Command %s does not exist\n\n", cmd)
+			log.Printf("\n\n! Command %s does not exist\n\n", cmd)
 			continue
 		}
 	}

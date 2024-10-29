@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"time"
 
@@ -19,26 +20,25 @@ func New() *service {
 	service := new(service)
 
 	file, _ := os.OpenFile(dataFilePath, os.O_CREATE, os.FileMode(0777))
+	defer file.Close()
 
 	if err := json.NewDecoder(file).Decode(&service.sessions); err != nil {
 		if err.Error() != "EOF" {
-			fmt.Printf("\n\n! Error parsing data file: %v\n! File may be corrupted\n\n", err)
+			log.Printf("\n\n! Error parsing data file: %v\n! File may be corrupted\n\n", err)
 		}
 		service.sessions = make([]session, 0)
 	} else {
-		fmt.Println("Session data loaded successfully")
+		log.Println("Session data loaded successfully")
 	}
 
 	return service
 }
 func (s *service) saveData() {
-	file, err := os.OpenFile(dataFilePath, os.O_CREATE, os.FileMode(0777))
-	if err != nil {
-		file, _ = os.Create(dataFilePath)
-	}
+	file, _ := os.OpenFile(dataFilePath, os.O_CREATE, os.FileMode(0777))
+	defer file.Close()
 
 	if err := json.NewEncoder(file).Encode(&s.sessions); err != nil {
-		fmt.Printf("! Error saving data: %v", err)
+		log.Printf("! Error saving data: %v", err)
 	}
 }
 func (s *service) Close() error {

@@ -2,7 +2,7 @@ package reader
 
 import (
 	"bufio"
-	"os"
+	"io"
 )
 
 type reader struct{}
@@ -11,8 +11,8 @@ func New() *reader {
 	return new(reader)
 }
 
-func (*reader) WaitKey() string {
-	var std = bufio.NewReader(os.Stdin)
+func (*reader) WaitKey(read io.Reader) string {
+	var std = bufio.NewReader(read)
 	key, err := std.ReadString('\n')
 	if err != nil {
 		return ""

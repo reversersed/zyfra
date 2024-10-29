@@ -1,0 +1,16 @@
+github.com/reversersed/zyfra/cmd/sso/main.go:7:			main		0.0%
+github.com/reversersed/zyfra/internal/app/app.go:51:		New		0.0%
+github.com/reversersed/zyfra/internal/app/app.go:68:		Run		0.0%
+github.com/reversersed/zyfra/internal/app/app.go:126:		Close		0.0%
+github.com/reversersed/zyfra/internal/config/config.go:9:	Read		100.0%
+github.com/reversersed/zyfra/internal/parser/parser.go:10:	New		100.0%
+github.com/reversersed/zyfra/internal/parser/parser.go:14:	ParseCommand	100.0%
+github.com/reversersed/zyfra/internal/reader/reader.go:10:	New		100.0%
+github.com/reversersed/zyfra/internal/reader/reader.go:14:	WaitKey		100.0%
+github.com/reversersed/zyfra/internal/service/service.go:19:	New		77.8%
+github.com/reversersed/zyfra/internal/service/service.go:36:	saveData	75.0%
+github.com/reversersed/zyfra/internal/service/service.go:44:	Close		100.0%
+github.com/reversersed/zyfra/internal/service/service.go:49:	CreateSession	100.0%
+github.com/reversersed/zyfra/internal/service/service.go:59:	CheckSession	100.0%
+github.com/reversersed/zyfra/internal/service/service.go:72:	Delete		100.0%
+total:								(statements)	50.0%
