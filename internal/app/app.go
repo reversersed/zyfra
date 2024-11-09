@@ -24,16 +24,6 @@ var (
 	help       = flag.Bool("help", false, "Prints flags manual")
 )
 
-const (
-	COMMAND_LOGIN  = "login"
-	ARGS_LOGIN     = "[username] [password]"
-	COMMAND_QUIT   = "exit"
-	COMMAND_AUTH   = "auth"
-	ARGS_AUTH      = "[session key]"
-	COMMAND_DELETE = "delete"
-	ARGS_DELETE    = "[session key]"
-)
-
 // @title SSO API
 // @version 1.0
 
