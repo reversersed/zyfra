@@ -65,7 +65,12 @@ func (s *service) CheckSession(key string) error {
 	return nil
 
 }
-func (s *service) Delete(key string) {
+func (s *service) Delete(key string) error {
+	if _, exist := s.sessions[key]; !exist {
+		return errors.New("session does not exist")
+	}
+
 	delete(s.sessions, key)
 	s.saveData()
+	return nil
 }
