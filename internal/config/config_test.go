@@ -14,11 +14,13 @@ func TestReadConfig(t *testing.T) {
 		file, err := os.OpenFile(dir, os.O_CREATE, os.FileMode(0777))
 		assert.NoError(t, err)
 
-		file.WriteString(fmt.Sprintf("{\"user\": \"%s\"}", []byte("password")))
-
-		file.Close()
+		_, err = file.WriteString(fmt.Sprintf("{\"user\": \"%s\"}", []byte("password")))
+		assert.NoError(t, err)
 
 		_, err = ReadFromFile(dir)
+		assert.NoError(t, err)
+
+		err = file.Close()
 		assert.NoError(t, err)
 	})
 	t.Run("non-existing config", func(t *testing.T) {
