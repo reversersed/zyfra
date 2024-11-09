@@ -11,7 +11,7 @@ import (
 func TestReadConfig(t *testing.T) {
 	t.Run("existing config", func(t *testing.T) {
 		dir := t.TempDir() + "/cfg.json"
-		file, err := os.OpenFile(dir, os.O_CREATE, os.FileMode(0777))
+		file, err := os.OpenFile(dir, os.O_CREATE|os.O_RDWR, os.ModePerm)
 		assert.NoError(t, err)
 
 		_, err = file.WriteString(fmt.Sprintf("{\"user\": \"%s\"}", []byte("password")))
@@ -30,7 +30,7 @@ func TestReadConfig(t *testing.T) {
 	})
 	t.Run("invalid file content", func(t *testing.T) {
 		dir := t.TempDir() + "/cfg.json"
-		file, err := os.OpenFile(dir, os.O_CREATE, os.FileMode(0777))
+		file, err := os.OpenFile(dir, os.O_CREATE|os.O_RDWR, os.ModePerm)
 		assert.NoError(t, err)
 
 		file.WriteString("oh my god is it a config file![][][][]")
