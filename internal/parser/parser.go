@@ -17,7 +17,7 @@ func (*parser) ParseCommand(input string) (cmd string, args []string, err error)
 		return
 	}
 
-	inp := strings.Split(strings.ReplaceAll(strings.ReplaceAll(input, "\r", ""), "\n", ""), " ")
+	inp := strings.Fields(strings.ReplaceAll(strings.ReplaceAll(input, "\r", ""), "\n", ""))
 
 	if len(inp) == 0 || len(inp[0]) == 0 {
 		err = errors.New("received empty command")

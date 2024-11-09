@@ -65,7 +65,7 @@
 				
 				<option value="file4">github.com/reversersed/zyfra/internal/reader/reader.go (100.0%)</option>
 				
-				<option value="file5">github.com/reversersed/zyfra/internal/service/service.go (90.9%)</option>
+				<option value="file5">github.com/reversersed/zyfra/internal/service/service.go (85.2%)</option>
 				
 				</select>
 			</div>
@@ -108,6 +108,7 @@ import (
         "github.com/reversersed/zyfra/internal/parser"
         "github.com/reversersed/zyfra/internal/reader"
         "github.com/reversersed/zyfra/internal/service"
+        "golang.org/x/crypto/bcrypt"
 )
 
 var (
@@ -128,22 +129,21 @@ const (
 )
 
 type readerService interface {
-        WaitKey(io.Reader) string
+        WaitForInput(io.Reader) string
 }
 type parserService interface {
         ParseCommand(string) (string, []string, error)
 }
 type sessionService interface {
-        Close() error
         CreateSession() string
         CheckSession(string) error
-        Delete(key string) error
+        Delete(key string)
 }
 type app struct {
         reader     readerService
         parser     parserService
         service    sessionService
-        validNames map[string]string
+        validNames map[string][]byte
 }
 
 func New() *app <span class="cov0" title="0">{
@@ -153,12 +153,13 @@ func New() *app <span class="cov0" title="0">{
                 return nil
         }</span>
 
-        <span class="cov0" title="0">cfg, err := config.Read(*fileConfig)
+        <span class="cov0" title="0">cfg, err := config.ReadFromFile(*fileConfig)
         if err != nil &amp;&amp; len(*fileConfig) &gt; 0 </span><span class="cov0" title="0">{
                 log.Fatalf("couldn't open and read file: %s (%v)", *fileConfig, err)
         }</span> else<span class="cov0" title="0"> if err != nil </span><span class="cov0" title="0">{
                 log.Printf("config file not found, using %s for username and %s for password...", *userName, *password)
-                cfg = map[string]string{*userName: *password}
+                pass, _ := bcrypt.GenerateFromPassword([]byte(*password), bcrypt.DefaultCost)
+                cfg = map[string][]byte{*userName: pass}
         }</span>
 
         <span class="cov0" title="0">return &amp;app{validNames: cfg, parser: parser.New(), reader: reader.New(), service: service.New()}</span>
@@ -166,7 +167,7 @@ func New() *app <span class="cov0" title="0">{
 func (a *app) Run() <span class="cov0" title="0">{
         for </span><span class="cov0" title="0">{
                 log.Printf("\nCommands available:\n\t%s %s\n\t%s %s\n\t%s %s\n\t%s\n", COMMAND_LOGIN, ARGS_LOGIN, COMMAND_AUTH, ARGS_AUTH, COMMAND_DELETE, ARGS_DELETE, COMMAND_QUIT)
-                cmd, args, err := a.parser.ParseCommand(a.reader.WaitKey(os.Stdin))
+                cmd, args, err := a.parser.ParseCommand(a.reader.WaitForInput(os.Stdin))
                 if err != nil </span><span class="cov0" title="0">{
                         log.Printf("\n! Parse error: %v\n\n", err)
                         continue</span>
@@ -185,7 +186,8 @@ func (a *app) Run() <span class="cov0" title="0">{
                                 log.Println("\n\n! User does not exist\n ")
                                 continue</span>
                         }
-                        <span class="cov0" title="0">if password != args[1] </span><span class="cov0" title="0">{
+
+                        <span class="cov0" title="0">if err := bcrypt.CompareHashAndPassword(password, []byte(args[1])); err != nil </span><span class="cov0" title="0">{
                                 log.Println("\n\n! Incorrect password\n ")
                                 continue</span>
                         }
@@ -208,13 +210,9 @@ func (a *app) Run() <span class="cov0" title="0">{
                                 log.Printf("\n\n! Excepted 1 arguments, but got %d\n\n", len(args))
                                 continue</span>
                         }
-                        <span class="cov0" title="0">if err := a.service.Delete(args[0]); err == nil </span><span class="cov0" title="0">{
-                                log.Println("\n\nSession deleted successfully")
-                                continue</span>
-                        } else<span class="cov0" title="0"> {
-                                log.Printf("\n\n%v\n", err)
-                                continue</span>
-                        }
+                        <span class="cov0" title="0">a.service.Delete(args[0])
+                        log.Println("\n\nSession deleted successfully")
+                        continue</span>
                 default:<span class="cov0" title="0">
                         log.Printf("\n\n! Command %s does not exist\n\n", cmd)
                         continue</span>
@@ -222,7 +220,6 @@ func (a *app) Run() <span class="cov0" title="0">{
         }
 }
 func (a *app) Close() <span class="cov0" title="0">{
-        a.service.Close()
         os.Exit(0)
 }</span>
 </pre>
@@ -235,7 +232,7 @@ import (
         "os"
 )
 
-func Read(path string) (map[string]string, error) <span class="cov8" title="1">{
+func ReadFromFile(path string) (map[string][]byte, error) <span class="cov8" title="1">{
         file, err := os.Open(path)
         if err != nil </span><span class="cov8" title="1">{
                 return nil, err
@@ -243,7 +240,7 @@ func Read(path string) (map[string]string, error) <span class="cov8" title="1">{
         <span class="cov8" title="1">defer file.Close()
         log.Printf("Opened file: %v\n", path)
 
-        var results map[string]string
+        var results map[string][]byte
         if err := json.NewDecoder(file).Decode(&amp;results); err != nil </span><span class="cov8" title="1">{
                 return nil, err
         }</span>
@@ -271,7 +268,7 @@ func (*parser) ParseCommand(input string) (cmd string, args []string, err error)
                 return
         }</span>
 
-        <span class="cov8" title="1">inp := strings.Split(strings.ReplaceAll(strings.ReplaceAll(input, "\r", ""), "\n", ""), " ")
+        <span class="cov8" title="1">inp := strings.Fields(strings.ReplaceAll(strings.ReplaceAll(input, "\r", ""), "\n", ""))
 
         if len(inp) == 0 || len(inp[0]) == 0 </span><span class="cov8" title="1">{
                 err = errors.New("received empty command")
@@ -298,7 +295,7 @@ func New() *reader <span class="cov8" title="1">{
         return new(reader)
 }</span>
 
-func (*reader) WaitKey(read io.Reader) string <span class="cov8" title="1">{
+func (*reader) WaitForInput(read io.Reader) string <span class="cov8" title="1">{
         var std = bufio.NewReader(read)
         key, err := std.ReadString('\n')
         if err != nil </span><span class="cov8" title="1">{
@@ -319,11 +316,10 @@ import (
         "time"
 
         "go.mongodb.org/mongo-driver/bson/primitive"
-        "golang.org/x/crypto/bcrypt"
 )
 
 type service struct {
-        sessions []session
+        sessions session
 }
 
 func New() *service <span class="cov8" title="1">{
@@ -336,7 +332,7 @@ func New() *service <span class="cov8" title="1">{
                 if err.Error() != "EOF" </span><span class="cov0" title="0">{
                         log.Printf("\n\n! Error parsing data file: %v\n! File may be corrupted\n\n", err)
                 }</span>
-                <span class="cov8" title="1">service.sessions = make([]session, 0)</span>
+                <span class="cov8" title="1">service.sessions = make(session, 0)</span>
         } else<span class="cov0" title="0"> {
                 log.Println("Session data loaded successfully")
         }</span>
@@ -344,52 +340,42 @@ func New() *service <span class="cov8" title="1">{
         <span class="cov8" title="1">return service</span>
 }
 func (s *service) saveData() <span class="cov8" title="1">{
-        file, _ := os.OpenFile(dataFilePath, os.O_CREATE, os.FileMode(0777))
-        defer file.Close()
+        file, _ := os.OpenFile(dataFilePath, os.O_CREATE|os.O_TRUNC, os.FileMode(0777))
+        defer func() </span><span class="cov8" title="1">{
+                if err := file.Close(); err != nil </span><span class="cov0" title="0">{
+                        log.Printf("! Error closing data file: %v", err)
+                }</span>
+        }()
 
-        if err := json.NewEncoder(file).Encode(&amp;s.sessions); err != nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if err := json.NewEncoder(file).Encode(&amp;s.sessions); err != nil </span><span class="cov0" title="0">{
                 log.Printf("! Error saving data: %v", err)
         }</span>
 }
-func (s *service) Close() error <span class="cov8" title="1">{
-        s.saveData()
-        return nil
-}</span>
-
 func (s *service) CreateSession() string <span class="cov8" title="1">{
         key := primitive.NewObjectID().Hex()
 
-        hash, _ := bcrypt.GenerateFromPassword([]byte(key), bcrypt.MinCost)
-        s.sessions = append(s.sessions, session{Id: hash, Expiration: time.Now().UTC().Add(time.Minute)})
+        s.sessions[key] = time.Now().UTC().Add(time.Minute)
 
         s.saveData()
         return string(key)
 }</span>
 
 func (s *service) CheckSession(key string) error <span class="cov8" title="1">{
-        // P.S. You can get direct access to session using s.sessions[key] in case there is no encryption for session keys
+        session, ok := s.sessions[key]
+        if !ok </span><span class="cov8" title="1">{
+                return errors.New("! Session not found")
+        }</span>
 
-        for _, v := range s.sessions </span><span class="cov8" title="1">{
-                if err := bcrypt.CompareHashAndPassword(v.Id, []byte(key)); err == nil </span><span class="cov8" title="1">{
-                        if v.Expiration.Before(time.Now().UTC()) </span><span class="cov8" title="1">{
-                                return fmt.Errorf("! Session is expired %.0f seconds ago\n! Please log in again", time.Now().UTC().Sub(v.Expiration).Seconds())
-                        }</span>
-                        <span class="cov8" title="1">return nil</span>
-                }
-        }
-        <span class="cov8" title="1">return errors.New("! Session not found")</span>
+        <span class="cov8" title="1">if session.Before(time.Now().UTC()) </span><span class="cov8" title="1">{
+                return fmt.Errorf("! Session is expired %.0f seconds ago\n! Please log in again", time.Now().UTC().Sub(session).Seconds())
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+
 }
-func (s *service) Delete(key string) error <span class="cov8" title="1">{
-        for i, v := range s.sessions </span><span class="cov8" title="1">{
-                if err := bcrypt.CompareHashAndPassword(v.Id, []byte(key)); err == nil </span><span class="cov8" title="1">{
-                        s.sessions[i] = s.sessions[len(s.sessions)-1]
-                        s.sessions = s.sessions[:len(s.sessions)-1]
-                        s.saveData()
-                        return nil
-                }</span>
-        }
-        <span class="cov8" title="1">return errors.New("! Session not found")</span>
-}
+func (s *service) Delete(key string) <span class="cov8" title="1">{
+        delete(s.sessions, key)
+        s.saveData()
+}</span>
 </pre>
 		
 		</div>

@@ -16,6 +16,7 @@ You can start the application in console without building it using `go run cmd/s
 With `go run` you can use all flags as usual (`-flag value`)
 
 <a name="guide"></a>
+
 ## Guide
 
 This application using a `.json` file to store valid usernames and passwords<br>
@@ -29,4 +30,4 @@ There already is `users.json` file in this repo which you can use or edit
 Application has 50% unit tests coverage<br>
 You can find coverage info in [tests](/tests) folder or use `make test` to run tests by yourself<br>
 
-> total:								(statements)	50.0%
+> total: (statements) 50.0%

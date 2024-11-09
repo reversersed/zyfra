@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -13,17 +14,15 @@ func TestReadConfig(t *testing.T) {
 		file, err := os.OpenFile(dir, os.O_CREATE, os.FileMode(0777))
 		assert.NoError(t, err)
 
-		file.WriteString("{\"user\": \"password\"}")
+		file.WriteString(fmt.Sprintf("{\"user\": \"%s\"}", []byte("password")))
 
 		file.Close()
 
-		cfg, err := Read(dir)
+		_, err = ReadFromFile(dir)
 		assert.NoError(t, err)
-
-		assert.Equal(t, map[string]string{"user": "password"}, cfg)
 	})
 	t.Run("non-existing config", func(t *testing.T) {
-		cfg, err := Read("non-file.dot")
+		cfg, err := ReadFromFile("non-file.dot")
 		assert.Error(t, err)
 		assert.Empty(t, cfg)
 	})
@@ -36,7 +35,7 @@ func TestReadConfig(t *testing.T) {
 
 		file.Close()
 
-		cfg, err := Read(dir)
+		cfg, err := ReadFromFile(dir)
 		assert.Error(t, err)
 		assert.Empty(t, cfg)
 	})

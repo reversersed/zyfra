@@ -18,12 +18,12 @@ func TestMain(m *testing.M) {
 func TestRead(t *testing.T) {
 	t.Run("read string", func(t *testing.T) {
 		read := strings.NewReader("example string\n")
-		str := t_reader.WaitKey(read)
+		str := t_reader.WaitForInput(read)
 		assert.Equal(t, "example string\n", str)
 	})
 	t.Run("empty reader", func(t *testing.T) {
 		read := strings.NewReader("")
-		str := t_reader.WaitKey(read)
+		str := t_reader.WaitForInput(read)
 		assert.Empty(t, str)
 	})
 }

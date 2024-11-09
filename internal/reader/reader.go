@@ -11,7 +11,7 @@ func New() *reader {
 	return new(reader)
 }
 
-func (*reader) WaitKey(read io.Reader) string {
+func (*reader) WaitForInput(read io.Reader) string {
 	var std = bufio.NewReader(read)
 	key, err := std.ReadString('\n')
 	if err != nil {

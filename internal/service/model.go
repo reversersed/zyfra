@@ -6,7 +6,4 @@ const (
 	dataFilePath = "./data.json"
 )
 
-type session struct {
-	Id         []byte
-	Expiration time.Time
-}
+type session map[string]time.Time

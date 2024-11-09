@@ -10,6 +10,7 @@ import (
 	"github.com/reversersed/zyfra/internal/parser"
 	"github.com/reversersed/zyfra/internal/reader"
 	"github.com/reversersed/zyfra/internal/service"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var (
@@ -30,22 +31,21 @@ const (
 )
 
 type readerService interface {
-	WaitKey(io.Reader) string
+	WaitForInput(io.Reader) string
 }
 type parserService interface {
 	ParseCommand(string) (string, []string, error)
 }
 type sessionService interface {
-	Close() error
 	CreateSession() string
 	CheckSession(string) error
-	Delete(key string) error
+	Delete(key string)
 }
 type app struct {
 	reader     readerService
 	parser     parserService
 	service    sessionService
-	validNames map[string]string
+	validNames map[string][]byte
 }
 
 func New() *app {
@@ -55,12 +55,13 @@ func New() *app {
 		return nil
 	}
 
-	cfg, err := config.Read(*fileConfig)
+	cfg, err := config.ReadFromFile(*fileConfig)
 	if err != nil && len(*fileConfig) > 0 {
 		log.Fatalf("couldn't open and read file: %s (%v)", *fileConfig, err)
 	} else if err != nil {
 		log.Printf("config file not found, using %s for username and %s for password...", *userName, *password)
-		cfg = map[string]string{*userName: *password}
+		pass, _ := bcrypt.GenerateFromPassword([]byte(*password), bcrypt.DefaultCost)
+		cfg = map[string][]byte{*userName: pass}
 	}
 
 	return &app{validNames: cfg, parser: parser.New(), reader: reader.New(), service: service.New()}
@@ -68,7 +69,7 @@ func New() *app {
 func (a *app) Run() {
 	for {
 		log.Printf("\nCommands available:\n\t%s %s\n\t%s %s\n\t%s %s\n\t%s\n", COMMAND_LOGIN, ARGS_LOGIN, COMMAND_AUTH, ARGS_AUTH, COMMAND_DELETE, ARGS_DELETE, COMMAND_QUIT)
-		cmd, args, err := a.parser.ParseCommand(a.reader.WaitKey(os.Stdin))
+		cmd, args, err := a.parser.ParseCommand(a.reader.WaitForInput(os.Stdin))
 		if err != nil {
 			log.Printf("\n! Parse error: %v\n\n", err)
 			continue
@@ -87,7 +88,8 @@ func (a *app) Run() {
 				log.Println("\n\n! User does not exist\n ")
 				continue
 			}
-			if password != args[1] {
+
+			if err := bcrypt.CompareHashAndPassword(password, []byte(args[1])); err != nil {
 				log.Println("\n\n! Incorrect password\n ")
 				continue
 			}
@@ -110,13 +112,9 @@ func (a *app) Run() {
 				log.Printf("\n\n! Excepted 1 arguments, but got %d\n\n", len(args))
 				continue
 			}
-			if err := a.service.Delete(args[0]); err == nil {
-				log.Println("\n\nSession deleted successfully")
-				continue
-			} else {
-				log.Printf("\n\n%v\n", err)
-				continue
-			}
+			a.service.Delete(args[0])
+			log.Println("\n\nSession deleted successfully")
+			continue
 		default:
 			log.Printf("\n\n! Command %s does not exist\n\n", cmd)
 			continue
@@ -124,6 +122,5 @@ func (a *app) Run() {
 	}
 }
 func (a *app) Close() {
-	a.service.Close()
 	os.Exit(0)
 }
