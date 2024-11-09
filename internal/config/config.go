@@ -7,7 +7,7 @@ import (
 )
 
 func ReadFromFile(path string) (map[string][]byte, error) {
-	file, err := os.Open(path)
+	file, err := os.OpenFile(path, os.O_RDONLY|os.O_SYNC, os.ModePerm)
 	if err != nil {
 		return nil, err
 	}
