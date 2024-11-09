@@ -25,5 +25,5 @@ github.com/reversersed/zyfra/internal/service/service.go:18:		New			77.8%
 github.com/reversersed/zyfra/internal/service/service.go:35:		saveData		66.7%
 github.com/reversersed/zyfra/internal/service/service.go:47:		CreateSession		100.0%
 github.com/reversersed/zyfra/internal/service/service.go:56:		CheckSession		100.0%
-github.com/reversersed/zyfra/internal/service/service.go:68:		Delete			80.0%
+github.com/reversersed/zyfra/internal/service/service.go:67:		Delete			80.0%
 total:									(statements)		68.7%

@@ -50,7 +50,7 @@ func (s *service) CreateSession() string {
 	s.sessions[key] = time.Now().UTC().Add(time.Minute)
 
 	s.saveData()
-	return string(key)
+	return key
 }
 
 func (s *service) CheckSession(key string) error {
@@ -63,7 +63,6 @@ func (s *service) CheckSession(key string) error {
 		return fmt.Errorf("! Session is expired %.0f seconds ago\n! Please log in again", time.Now().UTC().Sub(session).Seconds())
 	}
 	return nil
-
 }
 func (s *service) Delete(key string) error {
 	if _, exist := s.sessions[key]; !exist {

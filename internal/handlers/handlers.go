@@ -18,13 +18,13 @@ import (
 // @Router       /sessions [post]
 func (h *handler) HandleLoginCommand(c *gin.Context) {
 	request := models.LoginCommand{}
-	c.BindJSON(&request)
+	_ = c.BindJSON(&request)
 
-	if len(request.Login) <= 0 {
+	if len(request.Login) == 0 {
 		c.JSON(http.StatusBadRequest, models.RequestError{Message: "Excepted non-empty login", Error: "login length was zero"})
 		return
 	}
-	if len(request.Password) <= 0 {
+	if len(request.Password) == 0 {
 		c.JSON(http.StatusBadRequest, models.RequestError{Message: "Excepted non-empty password", Error: "password length was zero"})
 		return
 	}
@@ -53,7 +53,7 @@ func (h *handler) HandleLoginCommand(c *gin.Context) {
 // @Router       /sessions/{session} [get]
 func (h *handler) HandleAuthRequest(c *gin.Context) {
 	request := models.AuthRequest{}
-	c.BindUri(&request)
+	_ = c.BindUri(&request)
 
 	if err := h.service.CheckSession(request.Session); err != nil {
 		c.JSON(http.StatusUnauthorized, models.RequestError{Message: "User not authorized", Error: "Session not found"})
@@ -72,7 +72,7 @@ func (h *handler) HandleAuthRequest(c *gin.Context) {
 // @Router       /sessions/{session} [delete]
 func (h *handler) HandleDeleteCommand(c *gin.Context) {
 	request := models.DeleteCommand{}
-	c.BindUri(&request)
+	_ = c.BindUri(&request)
 
 	if err := h.service.Delete(request.Session); err != nil {
 		c.JSON(http.StatusNotFound, models.RequestError{Message: "Session was not deleted", Error: err.Error()})

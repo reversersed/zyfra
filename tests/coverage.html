@@ -90,7 +90,6 @@ import (
 )
 
 func main() <span class="cov0" title="0">{
-
         app := app.New()
         if app == nil </span><span class="cov0" title="0">{
                 return
@@ -417,13 +416,13 @@ import (
 // @Router       /sessions [post]
 func (h *handler) HandleLoginCommand(c *gin.Context) <span class="cov8" title="1">{
         request := models.LoginCommand{}
-        c.BindJSON(&amp;request)
+        _ = c.BindJSON(&amp;request)
 
-        if len(request.Login) &lt;= 0 </span><span class="cov8" title="1">{
+        if len(request.Login) == 0 </span><span class="cov8" title="1">{
                 c.JSON(http.StatusBadRequest, models.RequestError{Message: "Excepted non-empty login", Error: "login length was zero"})
                 return
         }</span>
-        <span class="cov8" title="1">if len(request.Password) &lt;= 0 </span><span class="cov8" title="1">{
+        <span class="cov8" title="1">if len(request.Password) == 0 </span><span class="cov8" title="1">{
                 c.JSON(http.StatusBadRequest, models.RequestError{Message: "Excepted non-empty password", Error: "password length was zero"})
                 return
         }</span>
@@ -452,7 +451,7 @@ func (h *handler) HandleLoginCommand(c *gin.Context) <span class="cov8" title="1
 // @Router       /sessions/{session} [get]
 func (h *handler) HandleAuthRequest(c *gin.Context) <span class="cov8" title="1">{
         request := models.AuthRequest{}
-        c.BindUri(&amp;request)
+        _ = c.BindUri(&amp;request)
 
         if err := h.service.CheckSession(request.Session); err != nil </span><span class="cov8" title="1">{
                 c.JSON(http.StatusUnauthorized, models.RequestError{Message: "User not authorized", Error: "Session not found"})
@@ -471,7 +470,7 @@ func (h *handler) HandleAuthRequest(c *gin.Context) <span class="cov8" title="1"
 // @Router       /sessions/{session} [delete]
 func (h *handler) HandleDeleteCommand(c *gin.Context) <span class="cov8" title="1">{
         request := models.DeleteCommand{}
-        c.BindUri(&amp;request)
+        _ = c.BindUri(&amp;request)
 
         if err := h.service.Delete(request.Session); err != nil </span><span class="cov8" title="1">{
                 c.JSON(http.StatusNotFound, models.RequestError{Message: "Session was not deleted", Error: err.Error()})
@@ -679,7 +678,7 @@ func (s *service) CreateSession() string <span class="cov8" title="1">{
         s.sessions[key] = time.Now().UTC().Add(time.Minute)
 
         s.saveData()
-        return string(key)
+        return key
 }</span>
 
 func (s *service) CheckSession(key string) error <span class="cov8" title="1">{
@@ -692,7 +691,6 @@ func (s *service) CheckSession(key string) error <span class="cov8" title="1">{
                 return fmt.Errorf("! Session is expired %.0f seconds ago\n! Please log in again", time.Now().UTC().Sub(session).Seconds())
         }</span>
         <span class="cov8" title="1">return nil</span>
-
 }
 func (s *service) Delete(key string) error <span class="cov8" title="1">{
         if _, exist := s.sessions[key]; !exist </span><span class="cov0" title="0">{
