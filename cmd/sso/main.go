@@ -5,7 +5,6 @@ import (
 )
 
 func main() {
-
 	app := app.New()
 	if app == nil {
 		return

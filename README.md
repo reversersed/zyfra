@@ -3,7 +3,7 @@
 ## Installation
 
 After cloning the repo with project you need to `go mod tidy` to install all dependencies<br>
-Before building or starting up the application, please, read the [guide](#guide)
+Before building or starting up the application, please, read the [guide](#guide) and [swagger](#swagger)
 
 ## Build
 
@@ -27,7 +27,14 @@ There already is `users.json` file in this repo which you can use or edit
 
 ## Tests
 
-Application has 50% unit tests coverage<br>
+Application has 68.7% unit tests coverage<br>
 You can find coverage info in [tests](/tests) folder or use `make test` to run tests by yourself<br>
 
-> total: (statements) 50.0%
+> total: (statements) 68.7%
+
+<a name="swagger"></a>
+
+## Swagger
+
+Application has swagger you can get access to with URL `http://localhost/api/swagger/index.html` (with default settings)<br>
+![Swagger](https://github.com/user-attachments/assets/d3f9497b-8a17-4962-971a-75c51d286ade)
