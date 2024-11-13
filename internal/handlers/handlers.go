@@ -14,7 +14,7 @@ import (
 // @Param        body body models.LoginCommand true "User credentials"
 // @Success      200  {object}   handlers.HandleLoginCommand.LoginResponse "Generated session key"
 // @Failure      400  {object}  models.RequestError "Received bad request body"
-// @Failure      404  {object}  models.RequestError "User was not found or password is incorrect"
+// @Failure      401  {object}  models.RequestError "User was not found or password is incorrect"
 // @Router       /sessions [post]
 func (h *handler) HandleLoginCommand(c *gin.Context) {
 	request := models.LoginCommand{}
@@ -30,11 +30,11 @@ func (h *handler) HandleLoginCommand(c *gin.Context) {
 	}
 	password, exist := h.cfg[request.Login]
 	if !exist {
-		c.JSON(http.StatusNotFound, models.RequestError{Message: "User does not exist", Error: "user not found"})
+		c.JSON(http.StatusUnauthorized, models.RequestError{Message: "User does not exist", Error: "user not found"})
 		return
 	}
 	if err := bcrypt.CompareHashAndPassword(password, []byte(request.Password)); err != nil {
-		c.JSON(http.StatusNotFound, models.RequestError{Message: "Received wrong password", Error: err.Error()})
+		c.JSON(http.StatusUnauthorized, models.RequestError{Message: "Received wrong password", Error: err.Error()})
 		return
 	}
 	type LoginResponse struct {
@@ -47,7 +47,7 @@ func (h *handler) HandleLoginCommand(c *gin.Context) {
 // @Tags         sessions
 // @Produce      json
 // @Param        session path string true "Session key"
-// @Success      204 "Session is valid"
+// @Success      200 "Session is valid"
 // @Failure      400  {object}  models.RequestError "Received bad request body"
 // @Failure      401  {object}  models.RequestError "Session is invalid"
 // @Router       /sessions/{session} [get]
@@ -59,14 +59,14 @@ func (h *handler) HandleAuthRequest(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, models.RequestError{Message: "User not authorized", Error: "Session not found"})
 		return
 	}
-	c.Status(http.StatusNoContent)
+	c.Status(http.StatusOK)
 }
 
 // @Summary      Delete session by provided key
 // @Tags         sessions
 // @Produce      json
 // @Param        session path string true "Session key"
-// @Success      204 "Session deleted"
+// @Success      200 "Session deleted"
 // @Failure      400  {object}  models.RequestError "Received bad request body"
 // @Failure      404  {object}  models.RequestError "Session not found"
 // @Router       /sessions/{session} [delete]
@@ -78,5 +78,5 @@ func (h *handler) HandleDeleteCommand(c *gin.Context) {
 		c.JSON(http.StatusNotFound, models.RequestError{Message: "Session was not deleted", Error: err.Error()})
 		return
 	}
-	c.Status(http.StatusNoContent)
+	c.Status(http.StatusOK)
 }
