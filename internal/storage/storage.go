@@ -26,10 +26,7 @@ func New(storage *mongo.Database) *db {
 	return db
 }
 func (d *db) seed() {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	documents, _ := d.users.CountDocuments(ctx, bson.D{})
+	documents, _ := d.users.CountDocuments(context.Background(), bson.D{})
 	if documents > 0 {
 		log.Printf("there are %d documents in database, seed canceled", documents)
 		return
