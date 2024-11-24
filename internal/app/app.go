@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -11,48 +12,39 @@ import (
 	"github.com/reversersed/zyfra/internal/config"
 	"github.com/reversersed/zyfra/internal/handlers"
 	"github.com/reversersed/zyfra/internal/service"
+	"github.com/reversersed/zyfra/internal/storage"
+	"github.com/reversersed/zyfra/pkg/mongo"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	"golang.org/x/crypto/bcrypt"
-)
-
-var (
-	fileConfig = flag.String("file", "", "Absolute path to config json file (with valid usernames)")
-	userName   = flag.String("username", "admin", "Act like valid username if no config file provided")
-	password   = flag.String("password", "admin", "Act like valid user password if no config file provided")
-	port       = flag.Int("port", 80, "Port the server will be listening")
-	help       = flag.Bool("help", false, "Prints flags manual")
 )
 
 // @title SSO API
 // @version 1.0
 
-// @host localhost:80
+// @host localhost:9000
 // @BasePath /api/
 
 // @scheme http
 // @accept json
 type app struct {
 	handler handlers.Handler
+	cfg     *config.Config
 }
 
 func New() *app {
 	flag.Parse()
-	if *help {
-		flag.PrintDefaults()
-		return nil
+
+	cfg, err := config.GetConfig("config/.env")
+	if err != nil {
+		log.Fatalf("couldn't open and read file: %v", err)
 	}
 
-	cfg, err := config.ReadFromFile(*fileConfig)
-	if err != nil && len(*fileConfig) > 0 {
-		log.Fatalf("couldn't open and read file: %s (%v)", *fileConfig, err)
-	} else if err != nil {
-		log.Printf("config file not found, using %s for username and %s for password...", *userName, *password)
-		pass, _ := bcrypt.GenerateFromPassword([]byte(*password), bcrypt.DefaultCost)
-		cfg = map[string][]byte{*userName: pass}
+	driver, err := mongo.NewClient(context.Background(), cfg.Database)
+	if err != nil {
+		log.Fatalf("couldn't create mongo connection: %v", err)
 	}
 
-	return &app{handler: handlers.New(service.New(), cfg)}
+	return &app{handler: handlers.New(service.New(storage.New(driver))), cfg: cfg}
 }
 func (a *app) Run() {
 	engine := gin.Default()
@@ -60,10 +52,9 @@ func (a *app) Run() {
 
 	a.handler.Register(engine)
 
-	log.Printf("starting server listening to http://localhost:%d...", *port)
+	log.Printf("starting server listening to http://%s:%d...\n", a.cfg.Server.Host, a.cfg.Server.Port)
 	engine.GET("/api/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	log.Printf("swagger uri: http://localhost:%d/api/swagger/index.html", *port)
-	if err := engine.Run(fmt.Sprintf("localhost:%d", *port)); err != nil {
+	if err := engine.Run(fmt.Sprintf("%s:%d", a.cfg.Server.Host, a.cfg.Server.Port)); err != nil {
 		log.Fatalf("router error: %v", err)
 	}
 }

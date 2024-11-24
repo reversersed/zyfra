@@ -5,7 +5,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/reversersed/zyfra/internal/handlers/models"
-	"golang.org/x/crypto/bcrypt"
 )
 
 // @Summary      Log in user with login and password
@@ -28,19 +27,15 @@ func (h *handler) HandleLoginCommand(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.RequestError{Message: "Excepted non-empty password", Error: "password length was zero"})
 		return
 	}
-	password, exist := h.cfg[request.Login]
-	if !exist {
-		c.JSON(http.StatusUnauthorized, models.RequestError{Message: "User does not exist", Error: "user not found"})
-		return
-	}
-	if err := bcrypt.CompareHashAndPassword(password, []byte(request.Password)); err != nil {
-		c.JSON(http.StatusUnauthorized, models.RequestError{Message: "Received wrong password", Error: err.Error()})
+	session, err := h.service.CreateSession(request.Login, request.Password)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, models.RequestError{Message: "User not found", Error: err.Error()})
 		return
 	}
 	type LoginResponse struct {
 		Session string `json:"session"`
 	}
-	c.JSON(http.StatusOK, &LoginResponse{Session: h.service.CreateSession()})
+	c.JSON(http.StatusOK, &LoginResponse{Session: session})
 }
 
 // @Summary      Authenticate user with session key

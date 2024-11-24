@@ -1,4 +1,8 @@
+run: gen
+	@docker compose up --build -d
+
 test:
+	-@mkdir tests
 	@go test -v -coverprofile=tests/coverage -coverpkg=./... ./... | findstr /V mocks && go tool cover -func=tests/coverage -o tests/coverage.func && go tool cover -html=tests/coverage -o tests/coverage.html
 
 gen:
