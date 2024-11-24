@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"os"
 	"testing"
 
@@ -9,22 +8,36 @@ import (
 )
 
 func TestReadConfig(t *testing.T) {
+	t.Run("wrong database config", func(t *testing.T) {
+		dir := t.TempDir() + "/w.env"
+		file, err := os.OpenFile(dir, os.O_CREATE|os.O_RDWR|os.O_TRUNC, os.ModePerm)
+		assert.NoError(t, err)
+
+		_, err = file.WriteString("SERVER_HOST=localhost\nSERVER_PORT=80")
+		assert.NoError(t, err)
+
+		_, err = GetConfig(dir)
+		assert.Error(t, err)
+
+		err = file.Close()
+		assert.NoError(t, err)
+	})
 	t.Run("existing config", func(t *testing.T) {
-		dir := t.TempDir() + "/cfg.json"
+		dir := t.TempDir() + "/.env"
 		file, err := os.OpenFile(dir, os.O_CREATE|os.O_RDWR, os.ModePerm)
 		assert.NoError(t, err)
 
-		_, err = file.WriteString(fmt.Sprintf("{\"user\": \"%s\"}", []byte("password")))
+		_, err = file.WriteString("SERVER_HOST=localhost\nSERVER_PORT=80\nDB_AUTHDB=base\nDB_BASE=database\nDB_HOST=local\nDB_NAME=root\nDB_PASS=pass\nDB_PORT=10")
 		assert.NoError(t, err)
 
-		_, err = ReadFromFile(dir)
+		_, err = GetConfig(dir)
 		assert.NoError(t, err)
 
 		err = file.Close()
 		assert.NoError(t, err)
 	})
 	t.Run("non-existing config", func(t *testing.T) {
-		cfg, err := ReadFromFile("non-file.dot")
+		cfg, err := GetConfig("non-existing-file.env")
 		assert.Error(t, err)
 		assert.Empty(t, cfg)
 	})
@@ -37,7 +50,7 @@ func TestReadConfig(t *testing.T) {
 
 		file.Close()
 
-		cfg, err := ReadFromFile(dir)
+		cfg, err := GetConfig(dir)
 		assert.Error(t, err)
 		assert.Empty(t, cfg)
 	})

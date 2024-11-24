@@ -1,75 +1,46 @@
 package service
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
-	"log"
-	"os"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	model "github.com/reversersed/zyfra/internal/storage"
 )
 
+type storage interface {
+	LoginUser(string, string) (string, error)
+	GetSession(string) (*model.UserSession, error)
+	DeleteSession(string) error
+}
 type service struct {
-	sessions session
+	storage storage
 }
 
-func New() *service {
-	service := new(service)
-
-	file, _ := os.OpenFile(dataFilePath, os.O_CREATE, os.FileMode(0777))
-	defer file.Close()
-
-	if err := json.NewDecoder(file).Decode(&service.sessions); err != nil {
-		if err.Error() != "EOF" {
-			log.Printf("\n\n! Error parsing data file: %v\n! File may be corrupted\n\n", err)
-		}
-		service.sessions = make(session, 0)
-	} else {
-		log.Println("Session data loaded successfully")
+func New(storage storage) *service {
+	return &service{storage: storage}
+}
+func (s *service) CreateSession(login, password string) (string, error) {
+	key, err := s.storage.LoginUser(login, password)
+	if err != nil {
+		return "", err
 	}
-
-	return service
-}
-func (s *service) saveData() {
-	file, _ := os.OpenFile(dataFilePath, os.O_CREATE|os.O_TRUNC, os.FileMode(0777))
-	defer func() {
-		if err := file.Close(); err != nil {
-			log.Printf("! Error closing data file: %v", err)
-		}
-	}()
-
-	if err := json.NewEncoder(file).Encode(&s.sessions); err != nil {
-		log.Printf("! Error saving data: %v", err)
-	}
-}
-func (s *service) CreateSession() string {
-	key := primitive.NewObjectID().Hex()
-
-	s.sessions[key] = time.Now().UTC().Add(time.Minute)
-
-	s.saveData()
-	return key
+	return key, nil
 }
 
 func (s *service) CheckSession(key string) error {
-	session, ok := s.sessions[key]
-	if !ok {
-		return errors.New("! Session not found")
+	session, err := s.storage.GetSession(key)
+	if err != nil {
+		return err
 	}
 
-	if session.Before(time.Now().UTC()) {
-		return fmt.Errorf("! Session is expired %.0f seconds ago\n! Please log in again", time.Now().UTC().Sub(session).Seconds())
+	if session.Expiration.Before(time.Now().UTC()) {
+		return fmt.Errorf("! Session is expired %.0f seconds ago\n! Please log in again", time.Now().UTC().Sub(session.Expiration).Seconds())
 	}
 	return nil
 }
 func (s *service) Delete(key string) error {
-	if _, exist := s.sessions[key]; !exist {
-		return errors.New("session does not exist")
+	if err := s.storage.DeleteSession(key); err != nil {
+		return err
 	}
-
-	delete(s.sessions, key)
-	s.saveData()
 	return nil
 }
